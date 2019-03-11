@@ -1,12 +1,10 @@
-function CleanShortcutNames($Path){
-	Get-ChildItem $Path | Rename-Item -NewName { $_.Name -Replace '(.*\.(dll|vst3))(.*)(\.lnk)','$1$4'}
-}
+#Remove -Shortcut suffix and return list of paths
+$symlinkPathList = Get-ChildItem -Recurse -Filter "*.lnk" | Where-Object { $_.Attributes -ne "Directory"} | Rename-Item -NewName { $_.Name -Replace '(.*\.(dll|vst3))(.*)(\.lnk)','$1$4'} -PassThru | Select -ExpandProperty FullName
 
-$symlinkPathList = Get-ChildItem -Recurse -Filter "*.lnk" | Where-Object { $_.Attributes -ne "Directory"} | select -ExpandProperty FullName
 $obj = New-Object -ComObject WScript.Shell 
 
 ForEach($existingLinkPath in $symlinkPathList) { 
-	CleanShortcutNames $existingLinkPath
+
 	
 	$linkObj = $obj.CreateShortcut($existingLinkPath) 
 	[string]$existingLinkTargetPath = $linkObj.TargetPath
@@ -16,4 +14,3 @@ ForEach($existingLinkPath in $symlinkPathList) {
 	"Making link: " + $existingLinkPath.Replace(".lnk","") + " to $existingLinkTargetPath"
 	New-Item -ItemType HardLink -Path $existingLinkPath.Replace(".lnk","") -Value $existingLinkTargetPath
 }
-
